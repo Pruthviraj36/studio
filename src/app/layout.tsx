@@ -3,6 +3,7 @@ import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { Background } from '@/components/background';
 import { cn } from '@/lib/utils';
+import { AuthProvider } from '@/components/auth-provider';
 
 export const metadata: Metadata = {
   title: 'HackConnect',
@@ -35,9 +36,11 @@ export default function RootLayout({
           process.env.NODE_ENV === 'development' ? 'debug-screens' : ''
         )}
       >
-        <Background />
-        {children}
-        <Toaster />
+        <AuthProvider>
+          <Background />
+          {children}
+          <Toaster />
+        </AuthProvider>
       </body>
     </html>
   );
