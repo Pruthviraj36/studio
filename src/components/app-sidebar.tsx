@@ -44,25 +44,23 @@ export function AppSidebar() {
       <SidebarMenu className="flex-1 p-4">
         {menuItems.map(({ href, label, icon: Icon }) => (
           <SidebarMenuItem key={href}>
-            <Link href={href} legacyBehavior passHref>
-              <SidebarMenuButton
-                asChild
-                isActive={pathname.startsWith(href)}
-                tooltip={{ children: label }}
-                className="justify-start"
-              >
-                <a >
-                  <Icon />
-                  <span>{label}</span>
-                </a>
-              </SidebarMenuButton>
-            </Link>
+            <SidebarMenuButton
+              asChild
+              isActive={pathname.startsWith(href)}
+              tooltip={{ children: label }}
+              className="justify-start"
+            >
+              <Link href={href}>
+                <Icon />
+                <span>{label}</span>
+              </Link>
+            </SidebarMenuButton>
           </SidebarMenuItem>
         ))}
       </SidebarMenu>
       <SidebarFooter className="p-4">
-        <Link href="/profile" className='w-full'>
-          <Button variant="outline" className="w-full justify-start gap-2 p-2 h-12">
+        <Button asChild variant="outline" className="w-full justify-start gap-2 p-2 h-12">
+          <Link href="/profile">
             <Avatar className="h-8 w-8">
                 <AvatarImage
                   src={`https://picsum.photos/seed/${currentUser.avatar}/200/200`}
@@ -75,8 +73,8 @@ export function AppSidebar() {
               <span className='font-medium'>{currentUser.name}</span>
               <span className="text-xs text-muted-foreground">{currentUser.experience}</span>
             </div>
-          </Button>
-        </Link>
+          </Link>
+        </Button>
       </SidebarFooter>
     </Sidebar>
   );
