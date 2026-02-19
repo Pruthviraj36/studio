@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react';
 import { getAIPortfolioAnalysis } from '@/app/actions';
 import type { AIPortfolioAnalysisOutput } from '@/ai/flows/ai-portfolio-analysis-flow';
+import type { User } from '@/lib/types';
 import {
   Card,
   CardContent,
@@ -14,7 +15,11 @@ import { Button } from './ui/button';
 import { Bot, CheckCircle, Lightbulb, Loader2, Target } from 'lucide-react';
 import { Skeleton } from './ui/skeleton';
 
-export function AIPortfolioAnalysis() {
+type AIPortfolioAnalysisProps = {
+  user: User;
+};
+
+export function AIPortfolioAnalysis({ user }: AIPortfolioAnalysisProps) {
   const [isPending, startTransition] = useTransition();
   const [result, setResult] = useState<AIPortfolioAnalysisOutput | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -22,7 +27,7 @@ export function AIPortfolioAnalysis() {
   const handleAnalysis = () => {
     startTransition(async () => {
       setError(null);
-      const { result, error } = await getAIPortfolioAnalysis();
+      const { result, error } = await getAIPortfolioAnalysis(user);
       if (error) {
         setError(error);
       } else {

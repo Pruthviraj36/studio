@@ -1,4 +1,5 @@
 import { AITeamRecommendations } from '@/components/ai-team-recommendations';
+import { currentUser } from '@/lib/data';
 
 export default function AiMatchPage() {
   return (
@@ -11,7 +12,7 @@ export default function AiMatchPage() {
           Let our AI analyze your profile and suggest the best teams for you to join based on your skills, interests, and project goals.
         </p>
       </div>
-      <AITeamRecommendations />
+      <AITeamRecommendations user={currentUser} />
     </div>
   );
 }

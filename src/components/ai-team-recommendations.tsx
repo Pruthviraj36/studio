@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react';
 import { Button } from './ui/button';
 import { getAITeamRecommendations } from '../app/actions';
 import type { AITeamRecommendationsOutput } from '@/ai/flows/ai-team-recommendations-flow';
+import type { User } from '@/lib/types';
 import { Loader2, Sparkles } from 'lucide-react';
 import {
   Card,
@@ -14,7 +15,11 @@ import {
 } from './ui/card';
 import { Progress } from './ui/progress';
 
-export function AITeamRecommendations() {
+type AITeamRecommendationsProps = {
+  user: User;
+};
+
+export function AITeamRecommendations({ user }: AITeamRecommendationsProps) {
   const [isPending, startTransition] = useTransition();
   const [result, setResult] = useState<AITeamRecommendationsOutput | null>(
     null
@@ -24,7 +29,7 @@ export function AITeamRecommendations() {
   const handleAnalysis = () => {
     startTransition(async () => {
       setError(null);
-      const { result, error } = await getAITeamRecommendations();
+      const { result, error } = await getAITeamRecommendations(user);
       if (error) {
         setError(error);
       } else {

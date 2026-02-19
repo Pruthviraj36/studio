@@ -1,5 +1,7 @@
+'use client';
 import { AIPortfolioAnalysis } from '@/components/ai-portfolio-analysis';
-import { GithubStats } from '@/components/github-stats';
+import dynamic from 'next/dynamic';
+const GithubStats = dynamic(() => import('@/components/github-stats').then(mod => mod.GithubStats), { ssr: false });
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -46,32 +48,30 @@ export default function ProfilePage() {
               </div>
             </CardContent>
           </Card>
-
-          {/* Socials Card */}
           <Card className="bg-white/20 dark:bg-black/20 backdrop-blur-md">
             <CardHeader>
               <CardTitle className="font-headline text-lg">Socials</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
-               <a href={user.githubUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 text-sm hover:text-primary">
+              <a href={user.githubUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 text-sm hover:text-primary">
                 <Github className="h-5 w-5 text-muted-foreground" />
                 <span>{user.githubUrl.replace('https://', '')}</span>
-               </a>
-                <div className="flex items-center gap-3 text-sm">
-                 <Mail className="h-5 w-5 text-muted-foreground" />
-                 <span>{user.name.toLowerCase().replace(' ', '.')}@example.com</span>
-                </div>
-                 <div className="flex items-center gap-3 text-sm">
-                 <Globe className="h-5 w-5 text-muted-foreground" />
-                 <span>personal-website.com</span>
-                </div>
+              </a>
+              <div className="flex items-center gap-3 text-sm">
+                <Mail className="h-5 w-5 text-muted-foreground" />
+                <span>{user.name.toLowerCase().replace(' ', '.')}@example.com</span>
+              </div>
+              <div className="flex items-center gap-3 text-sm">
+                <Globe className="h-5 w-5 text-muted-foreground" />
+                <span>personal-website.com</span>
+              </div>
             </CardContent>
           </Card>
         </div>
 
         <div className="lg:col-span-2 space-y-8">
-            <GithubStats stats={user.githubStats} />
-            <AIPortfolioAnalysis />
+          <GithubStats stats={user.githubStats} />
+          <AIPortfolioAnalysis user={user} />
         </div>
       </div>
     </div>
