@@ -10,6 +10,7 @@ import {
   Users,
   Code,
   Shield,
+  Trophy,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -27,6 +28,7 @@ const menuItems = [
   { href: '/discover', label: 'Discover', icon: Compass },
   { href: '/teams', label: 'Teams', icon: Users },
   { href: '/ai-match', label: 'AI Match', icon: Sparkles },
+  { href: '/hackathons', label: 'Hackathons', icon: Trophy },
   { href: '/chat', label: 'Chat', icon: MessageSquare },
   { href: '/profile', label: 'Profile', icon: User },
 ];

@@ -14,6 +14,7 @@ import {
   deleteDoc,
   QueryConstraint,
   arrayUnion,
+  arrayRemove,
   orderBy,
 } from 'firebase/firestore';
 import {
@@ -24,12 +25,13 @@ import {
   User as FirebaseUser,
 } from 'firebase/auth';
 import { auth, db } from './firebase';
-import type { User, Team } from './types';
+import type { User, Team, Hackathon } from './types';
 
 const USERS_COLLECTION = 'users';
 const TEAMS_COLLECTION = 'teams';
 const CHATS_COLLECTION = 'chats';
 const NOTIFICATIONS_COLLECTION = 'notifications';
+const HACKATHONS_COLLECTION = 'hackathons';
 
 /**
  * Sign up a new user
@@ -73,7 +75,7 @@ export async function signUpUser(
         forks: 0,
         recentActivity: 'No recent activity yet'
       },
-      role: email === 'dynamo24626@gmail.com' ? 'admin' : 'user'
+      role: email === process.env.MAIL ? 'admin' : 'user'
     });
     console.log('Firestore user data saved successfully');
   } catch (error) {
@@ -127,6 +129,12 @@ export async function getUserProfile(userId: string): Promise<User | null> {
     data.githubStats = githubStats;
   }
 
+  // Migration: Ensure favorites exists
+  if (!data.favorites) {
+    await updateDoc(doc(db, USERS_COLLECTION, userId), { favorites: [] });
+    data.favorites = [];
+  }
+
   return data;
 }
 
@@ -154,12 +162,8 @@ export async function toggleFavoriteDeveloper(currentUserId: string, targetUserI
   const currentFavorites = user.favorites || [];
   const isFavorite = currentFavorites.includes(targetUserId);
 
-  const updatedFavorites = isFavorite
-    ? currentFavorites.filter(id => id !== targetUserId)
-    : [...currentFavorites, targetUserId];
-
   await updateDoc(userRef, {
-    favorites: updatedFavorites,
+    favorites: isFavorite ? arrayRemove(targetUserId) : arrayUnion(targetUserId),
     updatedAt: new Date(),
   });
 }
@@ -191,7 +195,10 @@ export async function searchUsersBySkill(skill: string): Promise<User[]> {
  */
 export async function getAllUsers(): Promise<User[]> {
   const snapshot = await getDocs(collection(db, USERS_COLLECTION));
-  return snapshot.docs.map((doc: any) => doc.data() as User);
+  return snapshot.docs.map((doc: any) => ({
+    ...doc.data(),
+    id: doc.id
+  } as User));
 }
 
 /**
@@ -407,11 +414,40 @@ export async function markNotificationAsRead(notificationId: string) {
  * Get conversation messages
  */
 export async function getConversationMessages(conversationId: string) {
-  const snapshot = await getDocs(
-    collection(db, CHATS_COLLECTION, conversationId, 'messages')
-  );
-  return snapshot.docs.map((doc: any) => ({
-    id: doc.id,
-    ...doc.data(),
-  }));
+  const messagesRef = collection(db, CHATS_COLLECTION, conversationId, 'messages');
+  const q = query(messagesRef, orderBy('timestamp', 'asc'));
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+}
+
+// Hackathon Management
+export async function getAllHackathons(): Promise<Hackathon[]> {
+  const hackathonsRef = collection(db, HACKATHONS_COLLECTION);
+  const q = query(hackathonsRef, orderBy('date', 'desc'));
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Hackathon));
+}
+
+export async function createHackathon(hackathonData: Omit<Hackathon, 'id'>) {
+  const hackathonsRef = collection(db, HACKATHONS_COLLECTION);
+  const docRef = doc(hackathonsRef);
+  await setDoc(docRef, {
+    ...hackathonData,
+    id: docRef.id,
+    createdAt: new Date(),
+  });
+  return docRef.id;
+}
+
+export async function updateHackathon(hackathonId: string, updates: Partial<Hackathon>) {
+  const hackathonRef = doc(db, HACKATHONS_COLLECTION, hackathonId);
+  await updateDoc(hackathonRef, {
+    ...updates,
+    updatedAt: new Date(),
+  });
+}
+
+export async function deleteHackathon(hackathonId: string) {
+  const hackathonRef = doc(db, HACKATHONS_COLLECTION, hackathonId);
+  await deleteDoc(hackathonRef);
 }

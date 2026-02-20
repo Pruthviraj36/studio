@@ -2,7 +2,15 @@
 
 import type { User, Team } from '@/lib/types';
 import { getAllTeams, toggleFavoriteDeveloper as toggleFavInDb, updateUserGithubStats } from '@/lib/firebase-services';
-import { fetchGitHubUser, fetchGitHubRepos, fetchGitHubActivity, parseLanguageStats, formatActivitySummary, getTopRepos } from '@/lib/github';
+import { fetchGitHubUser, fetchGitHubRepos, fetchGitHubActivity, parseLanguageStats, formatActivitySummary, getTopRepos, GithubRepo, GithubUserProfile } from '@/lib/github';
+import { headers } from 'next/headers';
+
+async function getBaseUrl() {
+  const host = (await headers()).get('host') || 'localhost:3000' || 'localhost:9002';
+  const isLocal = host.includes('localhost') || host.includes('127.0.0.1') || host.startsWith('192.168');
+  const protocol = isLocal ? 'http' : 'https';
+  return `${protocol}://${host}`;
+}
 
 export async function refreshGithubStats(userId: string, githubUrl: string) {
   try {
@@ -10,11 +18,11 @@ export async function refreshGithubStats(userId: string, githubUrl: string) {
     if (!username) throw new Error('Invalid GitHub URL');
 
     const token = process.env.GITHUB_TOKEN;
-    const [user, repos, events] = await Promise.all([
+    const [user, repos, events] = (await Promise.all([
       fetchGitHubUser(username, token),
       fetchGitHubRepos(username, token),
       fetchGitHubActivity(username, token),
-    ]);
+    ])) as [GithubUserProfile, GithubRepo[], any[]];
 
     const stats = {
       stars: repos.reduce((sum, repo) => sum + repo.stargazers_count, 0),
@@ -44,8 +52,9 @@ export async function toggleFavorite(currentUserId: string, targetUserId: string
 
 export async function getGitHubUser(username: string): Promise<User | null> {
   try {
+    const baseUrl = await getBaseUrl();
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9002'}/api/github/${username}`,
+      `${baseUrl}/api/github/${username}`,
       { next: { revalidate: 3600 } } as any
     );
 
@@ -66,19 +75,20 @@ export async function getAIPortfolioAnalysis(user: User) {
     const githubProfileSummary = `
       User: ${user.name}.
       Bio: ${user.bio}.
-      Top Repositories: ${user.githubStats.topRepos
-        .map((repo) => `${repo.name} (${repo.language}, ${repo.stars} stars)`)
-        .join(', ')}.
-      Languages: ${user.githubStats.languages
-        .map((lang) => `${lang.name} (${lang.value}%)`)
-        .join(', ')}.
-      Total Stars: ${user.githubStats.stars}.
-      Recent Activity: ${user.githubStats.recentActivity}.
+      Top Repositories: ${user.githubStats?.topRepos
+        ?.map((repo) => `${repo.name} (${repo.language}, ${repo.stars} stars)`)
+        .join(', ') || 'No repositories found'}.
+      Languages: ${user.githubStats?.languages
+        ?.map((lang) => `${lang.name} (${lang.value}%)`)
+        .join(', ') || 'No language data'}.
+      Total Stars: ${user.githubStats?.stars || 0}.
+      Recent Activity: ${user.githubStats?.recentActivity || 'No recent activity'}.
     `;
 
     console.log(`[AI] Calling portfolio analysis API...`);
+    const baseUrl = await getBaseUrl();
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9002'}/api/ai/portfolio-analysis`,
+      `${baseUrl}/api/ai/portfolio-analysis`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -126,8 +136,9 @@ export async function getAITeamRecommendations(user: User) {
     };
 
     console.log(`[AI] Calling team recommendations API with ${teams.length} teams...`);
+    const baseUrl = await getBaseUrl();
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9002'}/api/ai/team-recommendations`,
+      `${baseUrl}/api/ai/team-recommendations`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

@@ -13,6 +13,7 @@ import { Loader2, Calendar, CheckSquare, Users, Info, Settings } from 'lucide-re
 import { TeamTasks } from '@/components/team-tasks';
 import { TeamMeetings } from '@/components/team-meetings';
 import { TeamRequests } from '@/components/team-requests';
+import { cn } from '@/lib/utils';
 
 export default function TeamDetailPage() {
     const { id } = useParams();
@@ -76,7 +77,10 @@ export default function TeamDetailPage() {
             </div>
 
             <Tabs defaultValue={activeTab} className="space-y-6">
-                <TabsList className="grid w-full grid-cols-4 lg:w-[600px] h-12 bg-white/20 dark:bg-black/20 backdrop-blur-md border">
+                <TabsList className={cn(
+                    "grid w-full bg-white/20 dark:bg-black/20 backdrop-blur-md border",
+                    isLead ? "grid-cols-4 lg:w-[600px]" : "grid-cols-3 lg:w-[450px]"
+                )}>
                     <TabsTrigger value="overview" className="gap-2 h-10 data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
                         <Info className="h-4 w-4" /> Overview
                     </TabsTrigger>

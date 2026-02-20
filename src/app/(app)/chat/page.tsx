@@ -30,10 +30,11 @@ export default function ChatPage() {
             getAllUsers(),
             getUserProfile(authUser.uid)
           ]);
-          setUsers(allUsers.filter(u => u.id !== authUser.uid));
+          const filteredUsers = allUsers.filter(u => u.id !== authUser.uid);
+          setUsers(filteredUsers);
           if (profile) setCurrentUser(profile);
-          if (allUsers.length > 0) {
-            setSelectedUser(allUsers.filter(u => u.id !== authUser.uid)[0] || null);
+          if (filteredUsers.length > 0) {
+            setSelectedUser(filteredUsers[0]);
           }
         } catch (error) {
           console.error('Error fetching chat data:', error);
@@ -106,7 +107,7 @@ export default function ChatPage() {
           </div>
         </div>
         <div className="flex-1 overflow-y-auto">
-          {users.map((user) => (
+          {users.filter(u => u.id !== currentUser.id).map((user) => (
             <div
               key={user.id}
               onClick={() => setSelectedUser(user)}

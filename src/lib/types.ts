@@ -71,3 +71,16 @@ export type Repo = {
   stars: number;
   language: string;
 };
+
+export type Hackathon = {
+  id: string;
+  title: string;
+  description: string;
+  location: string;
+  date: any;
+  status: 'Upcoming' | 'Ongoing' | 'Completed';
+  image: string;
+  link: string;
+  organizer: string;
+  createdAt?: any;
+};

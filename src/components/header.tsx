@@ -28,6 +28,7 @@ const pathToTitle: { [key: string]: string } = {
   '/discover': 'Discover Developers',
   '/teams': 'Manage Your Teams',
   '/ai-match': 'AI Team Recommendations',
+  '/hackathons': 'Find Hackathons',
   '/chat': 'Conversations',
   '/profile': 'My Profile',
   '/admin': 'Admin Dashboard',

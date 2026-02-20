@@ -33,7 +33,10 @@ export function DiscoverContent() {
         getAllUsers(),
         authUser ? getUserProfile(authUser.uid) : Promise.resolve(null)
       ]);
-      setUsers(allUsers.filter(u => u.id !== authUser?.uid));
+      const usersToSet = authUser
+        ? allUsers.filter((u) => u.id !== authUser.uid)
+        : allUsers;
+      setUsers(usersToSet);
       setCurrentUserProfile(profile);
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -60,6 +63,9 @@ export function DiscoverContent() {
   // Filter users based on all criteria
   const filteredUsers = useMemo(() => {
     return users.filter((user) => {
+      // Permanent fix: Never show self
+      if (authUser && user.id === authUser.uid) return false;
+
       // Favorites filter
       if (favoritesOnly) {
         if (!currentUserProfile?.favorites?.includes(user.id)) {
@@ -96,7 +102,7 @@ export function DiscoverContent() {
 
       return true;
     });
-  }, [users, searchQuery, skillFilter, experienceFilter]);
+  }, [users, searchQuery, skillFilter, experienceFilter, favoritesOnly, authUser, currentUserProfile]);
 
   const handleSearchChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {

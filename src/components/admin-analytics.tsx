@@ -138,7 +138,6 @@ export function AdminAnalytics({ users }: AdminAnalyticsProps) {
                                         cy="50%"
                                         innerRadius={60}
                                         outerRadius={100}
-                                        paddingAngle={5}
                                         dataKey="value"
                                     >
                                         {experienceData.map((entry, index) => (
@@ -180,7 +179,14 @@ export function AdminAnalytics({ users }: AdminAnalyticsProps) {
                             <BarChart data={registrationTimeline}>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                                 <XAxis dataKey="date" fontSize={12} tickLine={false} axisLine={false} />
-                                <YAxis fontSize={12} tickLine={false} axisLine={false} />
+                                <YAxis
+                                    fontSize={12}
+                                    tickLine={false}
+                                    axisLine={false}
+                                    allowDecimals={false}
+                                    domain={[0, (dataMax: number) => Math.max(dataMax + 1, 5)]}
+                                    tickFormatter={(val) => Math.floor(val).toString()}
+                                />
                                 <Tooltip
                                     contentStyle={{
                                         backgroundColor: 'hsl(var(--background))',
