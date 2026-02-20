@@ -1,6 +1,6 @@
 'use client';
 
-import { Bell, LogOut, Settings, User, MessageCircle, UserPlus, Info } from 'lucide-react';
+import { LogOut, Settings, User, MessageCircle, UserPlus, Info } from 'lucide-react';
 import { Button } from './ui/button';
 import {
   DropdownMenu,
@@ -16,13 +16,9 @@ import { useAuth } from './auth-provider';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSidebar } from './ui/sidebar';
-import { signOutUser, markNotificationAsRead } from '@/lib/firebase-services';
+import { signOutUser } from '@/lib/firebase-services';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
-import { Notification } from '@/lib/types';
-import { cn } from '@/lib/utils';
+import { NotificationsDropdown } from './notifications-dropdown';
 
 const pathToTitle: { [key: string]: string } = {
   '/discover': 'Discover Developers',
@@ -39,46 +35,6 @@ export function Header() {
   const pathname = usePathname();
   const { user: authUser, profile } = useAuth();
   const router = useRouter();
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-
-  useEffect(() => {
-    if (!authUser) return;
-
-    const q = query(
-      collection(db, 'notifications'),
-      where('userId', '==', authUser.uid),
-      orderBy('createdAt', 'desc')
-    );
-
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const notifs = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as Notification[];
-      setNotifications(notifs);
-    });
-
-    return () => unsubscribe();
-  }, [authUser]);
-
-  const unreadCount = notifications.filter(n => !n.read).length;
-
-  const handleNotificationClick = async (notif: Notification) => {
-    if (!notif.read) {
-      await markNotificationAsRead(notif.id);
-    }
-    if (notif.link) {
-      router.push(notif.link);
-    }
-  };
-
-  const getNotifIcon = (type: string) => {
-    switch (type) {
-      case 'ChatMessage': return <MessageCircle className="h-4 w-4 text-blue-500" />;
-      case 'JoinRequest': return <UserPlus className="h-4 w-4 text-green-500" />;
-      default: return <Info className="h-4 w-4 text-primary" />;
-    }
-  };
 
   const handleLogout = async () => {
     try {
@@ -113,60 +69,7 @@ export function Header() {
         <h1 className="text-lg font-semibold font-headline tracking-tight">{getTitle()}</h1>
       </div>
       <div className="flex items-center gap-4">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="relative h-9 w-9 rounded-full bg-slate-100 dark:bg-slate-800">
-              <Bell className="h-5 w-5" />
-              {unreadCount > 0 && (
-                <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground animate-in zoom-in">
-                  {unreadCount}
-                </span>
-              )}
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-80 p-0" align="end" forceMount>
-            <DropdownMenuLabel className="p-4 border-b">
-              Notifications
-            </DropdownMenuLabel>
-            <div className="max-h-[400px] overflow-y-auto">
-              {notifications.length > 0 ? (
-                notifications.map((notif) => (
-                  <DropdownMenuItem
-                    key={notif.id}
-                    onClick={() => handleNotificationClick(notif)}
-                    className={cn(
-                      "flex flex-col items-start gap-1 p-4 cursor-pointer focus:bg-accent",
-                      !notif.read && "bg-primary/5 border-l-2 border-primary"
-                    )}
-                  >
-                    <div className="flex w-full items-center justify-between gap-2">
-                      <div className="flex items-center gap-2">
-                        {getNotifIcon(notif.type)}
-                        <span className="font-semibold text-sm">{notif.title}</span>
-                      </div>
-                      <span className="text-[10px] text-muted-foreground">
-                        {notif.createdAt?.toDate ? new Date(notif.createdAt.toDate()).toLocaleDateString() : 'now'}
-                      </span>
-                    </div>
-                    <p className="text-xs text-muted-foreground line-clamp-2">
-                      {notif.message}
-                    </p>
-                  </DropdownMenuItem>
-                ))
-              ) : (
-                <div className="p-8 text-center text-sm text-muted-foreground">
-                  No notifications yet.
-                </div>
-              )}
-            </div>
-            <DropdownMenuSeparator />
-            <div className="p-2">
-              <Button variant="ghost" className="w-full text-xs" size="sm" onClick={() => router.push('/profile?tab=notifications')}>
-                View all notifications
-              </Button>
-            </div>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {authUser && <NotificationsDropdown userId={authUser.uid} />}
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

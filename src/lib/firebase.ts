@@ -14,6 +14,7 @@ import {
   connectFirestoreEmulator,
   Firestore,
 } from 'firebase/firestore';
+import { getStorage, FirebaseStorage } from 'firebase/storage';
 
 // Firebase configuration
 const firebaseConfig = {
@@ -28,9 +29,10 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
-// Initialize Auth and Firestore
+// Initialize Auth, Firestore, and Storage
 export const auth: Auth = getAuth(app);
 export const db: Firestore = getFirestore(app);
+export const storage: FirebaseStorage = getStorage(app);
 
 // Connect to emulators in development if explicitly requested
 console.log('Firebase Init - NODE_ENV:', process.env.NODE_ENV);

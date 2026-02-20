@@ -40,6 +40,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/hooks/use-toast';
+import { useIsMobile } from '@/lib/responsive';
+import { ResponsiveContainer } from '@/components/mobile-optimized-layout';
 
 export default function AdminPage() {
     const { user: authUser, loading: authLoading } = useAuth();
@@ -176,54 +178,57 @@ export default function AdminPage() {
 
     if (!adminUser) return null;
 
+    const isMobile = useIsMobile();
+
     return (
-        <div className="container mx-auto space-y-8">
-            <div className="flex flex-col gap-2">
-                <h1 className="text-3xl font-bold font-headline tracking-tight">Admin Dashboard</h1>
-                <p className="text-muted-foreground">Manage users and monitor system activity.</p>
-            </div>
+        <ResponsiveContainer maxWidth="lg" padding={isMobile ? "px-4 py-4" : "px-6 py-8"}>
+            <div className="space-y-6">
+                <div className="flex flex-col gap-2">
+                    <h1 className={`font-headline tracking-tight ${isMobile ? "text-2xl" : "text-3xl"} font-bold`}>Admin Dashboard</h1>
+                    <p className="text-muted-foreground">Manage users and monitor system activity.</p>
+                </div>
 
-            <div className="grid gap-4 md:grid-cols-4">
-                <Card className="bg-white/20 dark:bg-black/20 backdrop-blur-md border-primary/20">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-                        <Users className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{users.length}</div>
-                    </CardContent>
-                </Card>
-                <Card className="bg-white/20 dark:bg-black/20 backdrop-blur-md border-green-500/20">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">New Today</CardTitle>
-                        <UserPlus className="h-4 w-4 text-green-500" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{registeredToday}</div>
-                    </CardContent>
-                </Card>
-                <Card className="bg-white/20 dark:bg-black/20 backdrop-blur-md border-blue-500/20">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Admins</CardTitle>
-                        <Shield className="h-4 w-4 text-primary" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{users.filter(u => u.role === 'admin').length}</div>
-                    </CardContent>
-                </Card>
-                <Card className="bg-white/20 dark:bg-black/20 backdrop-blur-md border-orange-500/20">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Active Now</CardTitle>
-                        <Activity className="h-4 w-4 text-orange-500" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">1</div>
-                        <p className="text-xs text-muted-foreground">Just you right now</p>
-                    </CardContent>
-                </Card>
-            </div>
+                <div className={`grid gap-4 ${isMobile ? "grid-cols-2" : "md:grid-cols-2 lg:grid-cols-4"}`}>
+                    <Card className="bg-white/20 dark:bg-black/20 backdrop-blur-md border-primary/20">
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-xs md:text-sm font-medium">Total Users</CardTitle>
+                            <Users className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-xl md:text-2xl font-bold">{users.length}</div>
+                        </CardContent>
+                    </Card>
+                    <Card className="bg-white/20 dark:bg-black/20 backdrop-blur-md border-green-500/20">
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-xs md:text-sm font-medium">New Today</CardTitle>
+                            <UserPlus className="h-4 w-4 text-green-500" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-xl md:text-2xl font-bold">{registeredToday}</div>
+                        </CardContent>
+                    </Card>
+                    <Card className="bg-white/20 dark:bg-black/20 backdrop-blur-md border-blue-500/20">
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-xs md:text-sm font-medium">Admins</CardTitle>
+                            <Shield className="h-4 w-4 text-primary" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-xl md:text-2xl font-bold">{users.filter(u => u.role === 'admin').length}</div>
+                        </CardContent>
+                    </Card>
+                    <Card className="bg-white/20 dark:bg-black/20 backdrop-blur-md border-orange-500/20">
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-xs md:text-sm font-medium">Active Now</CardTitle>
+                            <Activity className="h-4 w-4 text-orange-500" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-xl md:text-2xl font-bold">1</div>
+                            <p className="text-xs text-muted-foreground">Just you right now</p>
+                        </CardContent>
+                    </Card>
+                </div>
 
-            <Tabs defaultValue="users" className="space-y-6">
+                <Tabs defaultValue="users" className="space-y-6">
                 <TabsList className="bg-white/10 backdrop-blur-md border border-white/20">
                     <TabsTrigger value="users" className="flex items-center gap-2">
                         <List className="h-4 w-4" /> User Management
@@ -457,6 +462,7 @@ export default function AdminPage() {
                     </Card>
                 </TabsContent>
             </Tabs>
-        </div>
+            </div>
+        </ResponsiveContainer>
     );
 }

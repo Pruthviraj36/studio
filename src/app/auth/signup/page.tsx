@@ -11,8 +11,11 @@ import { Code, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { TagInput } from '@/components/ui/tag-input';
 import { skills } from '@/lib/skills';
+import { MobileTouchInput, MobileForm, MobileFormGroup } from '@/components/mobile-form-optimized';
+import { useIsMobile } from '@/lib/responsive';
 
 export default function SignupPage() {
+    const isMobile = useIsMobile();
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -45,75 +48,64 @@ export default function SignupPage() {
 
     return (
         <div className="flex min-h-screen items-center justify-center p-4">
-            <Card className="w-full max-w-md border-0 bg-white/20 dark:bg-black/20 backdrop-blur-xl shadow-2xl">
-                <CardHeader className="space-y-2 text-center">
-                    <div className="flex justify-center mb-4">
+            <Card className="w-full max-w-md border-0 bg-white/20 dark:bg-black/20 backdrop-blur-xl shadow-2xl max-h-[90vh] overflow-y-auto">
+                <CardHeader className={isMobile ? "space-y-2 text-center p-4" : "space-y-2 text-center"}>
+                    <div className="flex justify-center mb-3">
                         <div className="p-3 bg-primary/10 rounded-2xl">
-                            <Code className="h-10 w-10 text-primary" />
+                            <Code className={isMobile ? "h-8 w-8 text-primary" : "h-10 w-10 text-primary"} />
                         </div>
                     </div>
-                    <CardTitle className="text-3xl font-bold font-headline">Create an Account</CardTitle>
-                    <CardDescription>Join the community of builders</CardDescription>
+                    <CardTitle className={isMobile ? "text-2xl font-bold font-headline" : "text-3xl font-bold font-headline"}>Create an Account</CardTitle>
+                    <CardDescription className="text-xs md:text-sm">Join the community of builders</CardDescription>
                 </CardHeader>
-                <form onSubmit={handleSignup}>
-                    <CardContent className="space-y-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="name">Full Name</Label>
-                            <Input
-                                id="name"
-                                placeholder="John Doe"
-                                required
-                                value={name}
-                                onChange={(e) => setName(e.target.value)}
-                                className="bg-white/50 dark:bg-black/50"
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="email">Email</Label>
-                            <Input
-                                id="email"
-                                type="email"
-                                placeholder="m@example.com"
-                                required
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                className="bg-white/50 dark:bg-black/50"
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="password">Password</Label>
-                            <Input
-                                id="password"
-                                type="password"
-                                required
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                className="bg-white/50 dark:bg-black/50"
-                            />
-                        </div>
+                <MobileForm onSubmit={handleSignup}>
+                    <CardContent className={isMobile ? "space-y-4 p-4" : "space-y-4"}>
+                        <MobileTouchInput
+                            id="name"
+                            label="Full Name"
+                            placeholder="John Doe"
+                            required
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                        />
+                        <MobileTouchInput
+                            id="email"
+                            type="email"
+                            label="Email"
+                            placeholder="m@example.com"
+                            required
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                        />
+                        <MobileTouchInput
+                            id="password"
+                            type="password"
+                            label="Password"
+                            required
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                        />
 
-                        <div className="space-y-2">
-                            <Label>Your Skills</Label>
+                        <MobileFormGroup label="Your Skills">
                             <TagInput
                                 placeholder="Search or type and Enter..."
                                 tags={skills_list}
                                 setTags={setSkillsList}
                                 suggestions={skills}
                             />
-                        </div>
+                        </MobileFormGroup>
 
-                        <div className="space-y-2">
-                            <Label>Interests</Label>
+                        <MobileFormGroup label="Interests">
                             <TagInput
                                 placeholder="Search or type and Enter..."
                                 tags={interests_list}
                                 setTags={setInterestsList}
                                 suggestions={skills}
                             />
-                        </div>
+                        </MobileFormGroup>
                         {error && (
-                            <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20">
-                                <p className="text-sm font-medium text-destructive">{error}</p>
+                            <div className={`${isMobile ? "p-2" : "p-3"} rounded-lg bg-destructive/10 border border-destructive/20`}>
+                                <p className={`${isMobile ? "text-xs" : "text-sm"} font-medium text-destructive`}>{error}</p>
                                 {error.includes('PERMISSION_DENIED') && (
                                     <p className="text-xs mt-1 text-destructive/80">
                                         Tip: Ensure Cloud Firestore is enabled and rules allow writes.
@@ -127,7 +119,7 @@ export default function SignupPage() {
                             </p>
                         )}
                     </CardContent>
-                    <CardFooter className="flex flex-col gap-4">
+                    <CardFooter className={isMobile ? "flex flex-col gap-3 p-4" : "flex flex-col gap-4"}>
                         <Button className="w-full" type="submit" disabled={loading}>
                             {loading ? (
                                 <>
@@ -138,15 +130,16 @@ export default function SignupPage() {
                                 'Sign Up'
                             )}
                         </Button>
-                        <p className="text-sm text-center text-muted-foreground">
+                        <p className="text-xs md:text-sm text-center text-muted-foreground">
                             Already have an account?{' '}
                             <Link href="/auth/login" className="text-primary hover:underline font-semibold">
                                 Sign in
                             </Link>
                         </p>
                     </CardFooter>
-                </form>
+                </MobileForm>
             </Card>
         </div>
+    );
     );
 }

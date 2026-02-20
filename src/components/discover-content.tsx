@@ -16,6 +16,8 @@ import { cn } from '@/lib/utils';
 import type { User } from '@/lib/types';
 import { getAllUsers, getUserProfile } from '@/lib/firebase-services';
 import { useAuth } from './auth-provider';
+import { useIsMobile } from '@/lib/responsive';
+import { ResponsiveContainer, ResponsiveGrid } from '@/components/mobile-optimized-layout';
 
 export function DiscoverContent() {
   const { user: authUser } = useAuth();
@@ -26,6 +28,7 @@ export function DiscoverContent() {
   const [experienceFilter, setExperienceFilter] = useState('all');
   const [favoritesOnly, setFavoritesOnly] = useState(false);
   const [currentUserProfile, setCurrentUserProfile] = useState<User | null>(null);
+  const isMobile = useIsMobile();
 
   const fetchData = useCallback(async () => {
     try {
@@ -127,8 +130,8 @@ export function DiscoverContent() {
   }, []);
 
   return (
-    <div className="container mx-auto">
-      <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+    <ResponsiveContainer maxWidth="lg" padding={isMobile ? "px-4 py-4" : "px-6 py-8"}>
+      <div className={isMobile ? "space-y-4" : "mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between"}>
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
           <Input
@@ -138,9 +141,9 @@ export function DiscoverContent() {
             onChange={handleSearchChange}
           />
         </div>
-        <div className="flex gap-4">
+        <div className={isMobile ? "flex flex-wrap gap-2" : "flex gap-4"}>
           <Select value={skillFilter} onValueChange={handleSkillFilterChange}>
-            <SelectTrigger className="w-full md:w-[180px]">
+            <SelectTrigger className={isMobile ? "w-[calc(50%-4px)]" : "w-full md:w-[180px]"}>
               <SelectValue placeholder="Filter by skill" />
             </SelectTrigger>
             <SelectContent>
@@ -157,7 +160,7 @@ export function DiscoverContent() {
             value={experienceFilter}
             onValueChange={handleExperienceFilterChange}
           >
-            <SelectTrigger className="w-full md:w-[200px]">
+            <SelectTrigger className={isMobile ? "w-[calc(50%-4px)]" : "w-full md:w-[200px]"}>
               <SelectValue placeholder="Filter by experience" />
             </SelectTrigger>
             <SelectContent>
@@ -182,14 +185,14 @@ export function DiscoverContent() {
       </div>
 
       {/* Results summary and reset button */}
-      <div className="mb-6 flex items-center justify-between">
+      <div className={isMobile ? "mb-4 flex flex-col gap-2" : "mb-6 flex items-center justify-between"}>
         <p className="text-sm text-muted-foreground">
           {loading ? 'Loading developers...' : `Showing ${filteredUsers.length} of ${users.length} developers`}
         </p>
         {(searchQuery || skillFilter !== 'all' || experienceFilter !== 'all') && !loading && (
           <button
             onClick={handleResetFilters}
-            className="text-sm text-blue-600 hover:text-blue-700 underline"
+            className="text-sm text-blue-600 hover:text-blue-700 underline w-fit"
           >
             Clear filters
           </button>
@@ -201,7 +204,7 @@ export function DiscoverContent() {
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       ) : filteredUsers.length > 0 ? (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <ResponsiveGrid mobileColumns={1} tabletColumns={2} desktopColumns={3} gap="gap-6">
           {filteredUsers.map((user: User) => (
             <UserCard
               key={user.id}
@@ -210,9 +213,9 @@ export function DiscoverContent() {
               onUpdate={fetchData}
             />
           ))}
-        </div>
+        </ResponsiveGrid>
       ) : (
-        <div className="rounded-lg border-2 border-dashed p-12 text-center">
+        <div className={`rounded-lg border-2 border-dashed ${isMobile ? "p-8" : "p-12"} text-center`}>
           <p className="text-lg font-semibold text-foreground">
             No developers found
           </p>
@@ -221,6 +224,6 @@ export function DiscoverContent() {
           </p>
         </div>
       )}
-    </div>
+    </ResponsiveContainer>
   );
 }

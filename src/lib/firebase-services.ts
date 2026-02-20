@@ -16,6 +16,8 @@ import {
   arrayUnion,
   arrayRemove,
   orderBy,
+  onSnapshot,
+  writeBatch,
 } from 'firebase/firestore';
 import {
   createUserWithEmailAndPassword,
@@ -231,29 +233,46 @@ export async function saveChatMessage(
   message: {
     senderId: string;
     content: string;
-    timestamp: Date;
+    imageUrl?: string;
   }
 ) {
   const msgRef = doc(collection(db, CHATS_COLLECTION, conversationId, 'messages'));
-  await setDoc(msgRef, {
-    ...message,
-    createdAt: new Date(),
-  });
-
-  // Create notification for the receiver
-  // We need to figure out the receiverId from conversationId
-  const ids = conversationId.split('_');
-  const receiverId = ids.find(id => id !== message.senderId);
-  if (receiverId) {
-    await createNotification({
-      userId: receiverId,
-      title: 'New Message',
-      message: `You have a new message: "${message.content.substring(0, 30)}${message.content.length > 30 ? '...' : ''}"`,
-      type: 'ChatMessage',
-      link: '/chat',
-      read: false,
-      createdAt: new Date()
+  const now = new Date();
+  
+  try {
+    await setDoc(msgRef, {
+      senderId: message.senderId,
+      content: message.content,
+      imageUrl: message.imageUrl || null,
+      createdAt: now,
+      isRead: false,
+      readAt: null,
     });
+    console.log('Message saved to Firestore:', msgRef.id);
+  } catch (error) {
+    console.error('Error saving message to Firestore:', error);
+    throw error;
+  }
+
+  // Create notification for the receiver (non-blocking, don't throw if it fails)
+  try {
+    const ids = conversationId.split('_');
+    const receiverId = ids.find(id => id !== message.senderId);
+    if (receiverId) {
+      const preview = message.content.length > 30 ? message.content.substring(0, 30) + '...' : message.content || '[Image]';
+      await createNotification({
+        userId: receiverId,
+        title: 'New Message',
+        message: `You have a new message: "${preview}"`,
+        type: 'ChatMessage',
+        link: '/chat',
+        read: false,
+        createdAt: now
+      });
+      console.log('Notification created for:', receiverId);
+    }
+  } catch (notificationError) {
+    console.warn('Failed to create notification (non-blocking):', notificationError);
   }
 
   return msgRef.id;
@@ -392,13 +411,18 @@ export async function scheduleMeeting(teamId: string, meeting: any) {
 /**
  * Notification Management
  */
+/*
+ * Notification Management
+ */
 export async function createNotification(notification: any) {
   const notifRef = doc(collection(db, NOTIFICATIONS_COLLECTION));
   await setDoc(notifRef, {
     ...notification,
     id: notifRef.id,
     createdAt: new Date(),
+    read: false, // Ensure read status defaults to false
   });
+  return notifRef.id;
 }
 
 export async function getUserNotifications(userId: string) {
@@ -408,13 +432,40 @@ export async function getUserNotifications(userId: string) {
     orderBy('createdAt', 'desc')
   );
   const snapshot = await getDocs(q);
-  return snapshot.docs.map(doc => doc.data());
+  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 }
 
 export async function markNotificationAsRead(notificationId: string) {
   await updateDoc(doc(db, NOTIFICATIONS_COLLECTION, notificationId), {
-    read: true
+    read: true,
+    updatedAt: new Date()
   });
+}
+
+/**
+ * Real-time notification listener
+ */
+export function setupNotificationListener(userId: string, callback: (notifications: any[]) => void) {
+  // Query by userId only, then filter by read status client-side to avoid composite index
+  const q = query(
+    collection(db, NOTIFICATIONS_COLLECTION),
+    where('userId', '==', userId),
+    orderBy('createdAt', 'desc')
+  );
+
+  const unsubscribe = onSnapshot(q, (snapshot) => {
+    const notifications = snapshot.docs
+      .map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }))
+      .filter(notif => !notif.read) // Filter unread notifications client-side
+      .slice(0, 50); // Limit to last 50 unread notifications
+    
+    callback(notifications);
+  });
+
+  return unsubscribe;
 }
 
 /**
@@ -457,4 +508,73 @@ export async function updateHackathon(hackathonId: string, updates: Partial<Hack
 export async function deleteHackathon(hackathonId: string) {
   const hackathonRef = doc(db, HACKATHONS_COLLECTION, hackathonId);
   await deleteDoc(hackathonRef);
+}
+
+/**
+ * Chat Enhancements
+ */
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { storage } from './firebase';
+
+export async function uploadChatImage(file: File, path: string): Promise<string> {
+  try {
+    const storageRef = ref(storage, path);
+    // Use metadata to set cache control for better performance
+    await uploadBytes(storageRef, file, {
+      cacheControl: 'public, max-age=31536000', // Cache for 1 year since files are immutable
+    });
+    const url = await getDownloadURL(storageRef);
+    return url;
+  } catch (error) {
+    console.error('Error uploading chat image:', error);
+    throw error;
+  }
+}
+
+export async function setTypingStatus(conversationId: string, userId: string, isTyping: boolean) {
+  try {
+    const typingRef = doc(db, CHATS_COLLECTION, conversationId, 'status', 'typing');
+    await setDoc(typingRef, {
+      [userId]: isTyping,
+      updatedAt: new Date()
+    }, { merge: true });
+  } catch (error) {
+    // Silently fail - typing status is not critical
+    console.debug('Typing status update failed:', error);
+  }
+}
+
+export function listenForTypingStatus(conversationId: string, callback: (typingUsers: string[]) => void) {
+  let lastUpdate = 0;
+  const THROTTLE_MS = 300; // Throttle updates to every 300ms
+
+  const typingRef = doc(db, CHATS_COLLECTION, conversationId, 'status', 'typing');
+  return onSnapshot(typingRef, (doc) => {
+    const now = Date.now();
+    // Throttle the callback to reduce re-renders
+    if (now - lastUpdate < THROTTLE_MS) return;
+    
+    lastUpdate = now;
+    if (doc.exists()) {
+      const data = doc.data();
+      const typingUsers = Object.keys(data).filter(userId => {
+        // Filter out the updatedAt field and check if actually typing
+        return userId !== 'updatedAt' && data[userId] === true;
+      });
+      callback(typingUsers);
+    } else {
+      callback([]);
+    }
+  }, (error) => {
+    // Silently fail - typing status is not critical
+    console.debug('Typing listener error:', error);
+  });
+}
+
+export async function markMessageAsRead(conversationId: string, messageId: string) {
+  const messageRef = doc(db, CHATS_COLLECTION, conversationId, 'messages', messageId);
+  await updateDoc(messageRef, {
+    isRead: true,
+    readAt: new Date()
+  });
 }

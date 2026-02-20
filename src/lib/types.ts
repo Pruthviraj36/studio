@@ -49,12 +49,13 @@ export type TeamMeeting = {
 export type Notification = {
   id: string;
   userId: string;
+  type: 'team_invite' | 'message' | 'system' | 'JoinRequest' | 'TeamUpdate' | 'ChatMessage'; // Keeping existing types for safety
   title: string;
   message: string;
-  type: 'JoinRequest' | 'TeamUpdate' | 'ChatMessage' | 'System';
   link?: string;
   read: boolean;
   createdAt: any;
+  metadata?: any;
 };
 
 export type GithubStats = {

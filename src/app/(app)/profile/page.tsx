@@ -36,9 +36,13 @@ import {
 } from '@/components/ui/select';
 import { refreshGithubStats } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
+import { useIsMobile } from '@/lib/responsive';
+import { MobileTouchInput, MobileForm, MobileFormGroup } from '@/components/mobile-form-optimized';
+import { ResponsiveContainer } from '@/components/mobile-optimized-layout';
 
 export default function ProfilePage() {
   const { user: authUser, loading: authLoading } = useAuth();
+  const isMobile = useIsMobile();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
@@ -166,93 +170,104 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="container mx-auto">
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-        <div className="lg:col-span-1 space-y-8">
+    <ResponsiveContainer maxWidth="xl" padding={isMobile ? "px-4 py-4" : "px-6 py-8"}>
+      <div className={isMobile ? "space-y-6" : "grid grid-cols-1 gap-8 lg:grid-cols-3"}>
+        <div className={isMobile ? "space-y-6" : "lg:col-span-1 space-y-8"}>
           {/* Profile Card */}
           <Card className="bg-white/20 dark:bg-black/20 backdrop-blur-md">
-            <CardContent className="p-6 text-center">
-              <Avatar className="h-32 w-32 mx-auto mb-4 border-4 border-primary/50">
+            <CardContent className={isMobile ? "p-4 text-center" : "p-6 text-center"}>
+              <Avatar className={isMobile ? "h-24 w-24 mx-auto mb-3 border-4 border-primary/50" : "h-32 w-32 mx-auto mb-4 border-4 border-primary/50"}>
                 <AvatarImage src={`https://picsum.photos/seed/${user.avatar}/200/200`} />
-                <AvatarFallback className="text-4xl">{user.name.charAt(0)}</AvatarFallback>
+                <AvatarFallback className={isMobile ? "text-2xl" : "text-4xl"}>{user.name.charAt(0)}</AvatarFallback>
               </Avatar>
-              <h2 className="text-2xl font-bold font-headline">{user.name}</h2>
-              <div className="flex items-center justify-center gap-2 text-muted-foreground">
-                <span>{user.location}</span>
+              <h2 className={isMobile ? "text-xl font-bold font-headline" : "text-2xl font-bold font-headline"}>{user.name}</h2>
+              <div className="flex items-center justify-center gap-2 text-muted-foreground flex-wrap">
+                <span className="text-sm">{user.location}</span>
                 <span>•</span>
                 <Badge variant="outline" className="text-xs">{user.experience || 'Beginner'}</Badge>
               </div>
-              <p className="mt-4 text-sm">{user.bio}</p>
+              <p className={isMobile ? "mt-2 text-xs line-clamp-3" : "mt-4 text-sm"}>{user.bio}</p>
               <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button variant="outline" className="mt-4 w-full bg-white/50 dark:bg-black/50">
+                  <Button variant="outline" className={isMobile ? "mt-3 w-full bg-white/50 dark:bg-black/50 h-11" : "mt-4 w-full bg-white/50 dark:bg-black/50"}>
                     <Pencil className="mr-2 h-4 w-4" /> Edit Profile
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="sm:max-w-[525px]">
+                <DialogContent className={isMobile ? "w-[95vw] max-h-[90vh] overflow-y-auto" : "sm:max-w-[525px]"}>
                   <DialogHeader>
                     <DialogTitle>Edit Profile</DialogTitle>
                     <DialogDescription>
                       Update your personal information and skills.
                     </DialogDescription>
                   </DialogHeader>
-                  <form onSubmit={handleUpdateProfile}>
-                    <div className="grid gap-4 py-4">
-                      <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="name" className="text-right">Name</Label>
-                        <Input id="name" value={editName} onChange={(e) => setEditName(e.target.value)} className="col-span-3" required />
-                      </div>
-                      <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="location" className="text-right">Location</Label>
-                        <div className="col-span-3">
-                          <Input
-                            id="location"
-                            list="cities-list"
-                            value={editLocation}
-                            onChange={(e) => setEditLocation(e.target.value)}
-                            required
-                          />
-                          <datalist id="cities-list">
-                            {cities.map(city => (
-                              <option key={city} value={city} />
-                            ))}
-                          </datalist>
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="experience" className="text-right">Experience</Label>
-                        <div className="col-span-3">
-                          <Select
-                            value={editExperience}
-                            onValueChange={(value: any) => setEditExperience(value)}
-                          >
-                            <SelectTrigger id="experience">
-                              <SelectValue placeholder="Select experience" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="Beginner">Beginner</SelectItem>
-                              <SelectItem value="Intermediate">Intermediate</SelectItem>
-                              <SelectItem value="Advanced">Advanced</SelectItem>
-                              <SelectItem value="Expert">Expert</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="bio" className="text-right">Bio</Label>
-                        <Textarea id="bio" value={editBio} onChange={(e) => setEditBio(e.target.value)} className="col-span-3" required />
-                      </div>
-                      <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="githubUrl" className="text-right">GitHub URL</Label>
-                        <Input id="githubUrl" value={editGithubUrl} onChange={(e) => setEditGithubUrl(e.target.value)} placeholder="https://github.com/username" className="col-span-3" />
-                      </div>
-                      <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="websiteUrl" className="text-right">Website</Label>
-                        <Input id="websiteUrl" value={editWebsiteUrl} onChange={(e) => setEditWebsiteUrl(e.target.value)} placeholder="https://yourportfolio.com" className="col-span-3" />
-                      </div>
-                      <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="avatar" className="text-right">Avatar Seed</Label>
-                        <div className="col-span-3 grid grid-cols-5 gap-2">
+                  <MobileForm onSubmit={handleUpdateProfile}>
+                    <div className="space-y-4">
+                      <MobileFormGroup label="Name">
+                        <MobileTouchInput 
+                          id="name" 
+                          value={editName} 
+                          onChange={(e) => setEditName(e.target.value)} 
+                          required 
+                        />
+                      </MobileFormGroup>
+                      <MobileFormGroup label="Location">
+                        <Input
+                          id="location"
+                          list="cities-list"
+                          value={editLocation}
+                          onChange={(e) => setEditLocation(e.target.value)}
+                          className="h-12"
+                          required
+                        />
+                        <datalist id="cities-list">
+                          {cities.map(city => (
+                            <option key={city} value={city} />
+                          ))}
+                        </datalist>
+                      </MobileFormGroup>
+                      <MobileFormGroup label="Experience">
+                        <Select
+                          value={editExperience}
+                          onValueChange={(value: any) => setEditExperience(value)}
+                        >
+                          <SelectTrigger id="experience" className="h-12">
+                            <SelectValue placeholder="Select experience" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Beginner">Beginner</SelectItem>
+                            <SelectItem value="Intermediate">Intermediate</SelectItem>
+                            <SelectItem value="Advanced">Advanced</SelectItem>
+                            <SelectItem value="Expert">Expert</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </MobileFormGroup>
+                      <MobileFormGroup label="Bio">
+                        <Textarea 
+                          id="bio" 
+                          value={editBio} 
+                          onChange={(e) => setEditBio(e.target.value)} 
+                          className="min-h-24"
+                          required 
+                        />
+                      </MobileFormGroup>
+                      <MobileFormGroup label="GitHub URL">
+                        <MobileTouchInput 
+                          id="githubUrl" 
+                          value={editGithubUrl} 
+                          onChange={(e) => setEditGithubUrl(e.target.value)} 
+                          placeholder="https://github.com/username" 
+                        />
+                      </MobileFormGroup>
+                      <MobileFormGroup label="Website">
+                        <MobileTouchInput 
+                          id="websiteUrl" 
+                          value={editWebsiteUrl} 
+                          onChange={(e) => setEditWebsiteUrl(e.target.value)} 
+                          placeholder="https://yourportfolio.com" 
+                        />
+                      </MobileFormGroup>
+                      <MobileFormGroup label="Avatar Seed">
+                        <div className="grid grid-cols-5 gap-2">
                           {['1', '2', '3', '4', '5'].map((seed) => (
                             <button
                               key={seed}
@@ -269,37 +284,43 @@ export default function ProfilePage() {
                             </button>
                           ))}
                         </div>
-                      </div>
-                      <div className="grid grid-cols-4 items-start gap-4">
-                        <Label htmlFor="skills" className="text-right pt-2">Skills</Label>
-                        <div className="col-span-3">
-                          <TagInput
-                            placeholder="Type a skill and press Enter..."
-                            tags={editSkills}
-                            setTags={setEditSkills}
-                            suggestions={skills}
-                          />
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-4 items-start gap-4">
-                        <Label htmlFor="interests" className="text-right pt-2">Interests</Label>
-                        <div className="col-span-3">
-                          <TagInput
-                            placeholder="Type an interest and press Enter..."
-                            tags={editInterests}
-                            setTags={setEditInterests}
-                            suggestions={skills}
-                          />
-                        </div>
-                      </div>
+                      </MobileFormGroup>
+                      <MobileFormGroup label="Skills">
+                        <TagInput
+                          placeholder="Type a skill and press Enter..."
+                          tags={editSkills}
+                          setTags={setEditSkills}
+                          suggestions={skills}
+                        />
+                      </MobileFormGroup>
+                      <MobileFormGroup label="Interests">
+                        <TagInput
+                          placeholder="Type an interest and press Enter..."
+                          tags={editInterests}
+                          setTags={setEditInterests}
+                          suggestions={skills}
+                        />
+                      </MobileFormGroup>
                     </div>
-                    <DialogFooter>
-                      <Button type="submit" disabled={updating}>
+                    <div className={isMobile ? "flex gap-2 mt-6" : "flex justify-end gap-4 mt-6"}>
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        onClick={() => setIsEditDialogOpen(false)}
+                        className={isMobile ? "flex-1" : ""}
+                      >
+                        Cancel
+                      </Button>
+                      <Button 
+                        type="submit" 
+                        disabled={updating}
+                        className={isMobile ? "flex-1" : ""}
+                      >
                         {updating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                         {updating ? 'Saving...' : 'Save Changes'}
                       </Button>
-                    </DialogFooter>
-                  </form>
+                    </div>
+                  </MobileForm>
                 </DialogContent>
               </Dialog>
             </CardContent>
@@ -308,43 +329,44 @@ export default function ProfilePage() {
           {/* Skills Card */}
           <Card className="bg-white/20 dark:bg-black/20 backdrop-blur-md">
             <CardHeader>
-              <CardTitle className="font-headline text-lg">Skills & Interests</CardTitle>
+              <CardTitle className="font-headline text-base md:text-lg">Skills & Interests</CardTitle>
             </CardHeader>
             <CardContent>
               <h3 className="font-semibold text-sm mb-2">Top Skills</h3>
               <div className="flex flex-wrap gap-2 mb-4">
-                {user.skills.map(skill => <Badge key={skill} variant="secondary" className='bg-primary/10 text-primary border-primary/20'>{skill}</Badge>)}
+                {user.skills.map(skill => <Badge key={skill} variant="secondary" className='bg-primary/10 text-primary border-primary/20 text-xs'>{skill}</Badge>)}
               </div>
               <h3 className="font-semibold text-sm mb-2">Interests</h3>
               <div className="flex flex-wrap gap-2">
-                {user.interests.map(interest => <Badge key={interest} variant="outline">{interest}</Badge>)}
+                {user.interests.map(interest => <Badge key={interest} variant="outline" className="text-xs">{interest}</Badge>)}
               </div>
             </CardContent>
           </Card>
+          
           <Card className="bg-white/20 dark:bg-black/20 backdrop-blur-md">
             <CardHeader>
-              <CardTitle className="font-headline text-lg">Socials</CardTitle>
+              <CardTitle className="font-headline text-base md:text-lg">Socials</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
               <a href={user.githubUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 text-sm hover:text-primary">
-                <Github className="h-5 w-5 text-muted-foreground" />
-                <span>{user.githubUrl.replace('https://', '')}</span>
+                <Github className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                <span className="truncate">{user.githubUrl.replace('https://', '')}</span>
               </a>
               <a href={`mailto:${user.email}`} className="flex items-center gap-3 text-sm hover:text-primary transition-colors">
-                <Mail className="h-5 w-5 text-muted-foreground" />
-                <span>{user.email}</span>
+                <Mail className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                <span className="truncate">{user.email}</span>
               </a>
               {user.websiteUrl && (
                 <a href={user.websiteUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 text-sm hover:text-primary transition-colors">
-                  <Globe className="h-5 w-5 text-muted-foreground" />
-                  <span>{user.websiteUrl.replace('https://', '').replace('http://', '')}</span>
+                  <Globe className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                  <span className="truncate">{user.websiteUrl.replace('https://', '').replace('http://', '')}</span>
                 </a>
               )}
             </CardContent>
           </Card>
         </div>
 
-        <div className="lg:col-span-2 space-y-8">
+        <div className={isMobile ? "space-y-6" : "lg:col-span-2 space-y-8"}>
           <GithubStats
             stats={user.githubStats}
             onRefresh={handleRefreshStats}
@@ -353,6 +375,6 @@ export default function ProfilePage() {
           <AIPortfolioAnalysis user={user} />
         </div>
       </div>
-    </div>
+    </ResponsiveContainer>
   );
 }
