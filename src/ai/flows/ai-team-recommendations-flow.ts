@@ -70,7 +70,8 @@ Analyze the developer's information and compare it with each available team. For
 Provide a list of recommended teams, including the team's ID, name, a detailed reasoning for the match, and a match score (0-100). Focus on giving clear and helpful explanations.
 
 Example of expected output structure:
-{{
+\`\`\`json
+{
   "recommendations": [
     {
       "teamId": "team123",
@@ -85,7 +86,8 @@ Example of expected output structure:
       "matchScore": 80
     }
   ]
-}}
+}
+\`\`\`
 `,
 });
 
