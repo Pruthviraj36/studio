@@ -152,6 +152,13 @@ export async function updateUserProfile(
 }
 
 /**
+ * Delete a user profile (Admin only)
+ */
+export async function deleteUser(userId: string) {
+  await deleteDoc(doc(db, USERS_COLLECTION, userId));
+}
+
+/**
  * Toggle favorite developer
  */
 export async function toggleFavoriteDeveloper(currentUserId: string, targetUserId: string) {

@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/components/auth-provider';
 import { useRouter } from 'next/navigation';
-import { getAllUsers, getUserProfile, getAllHackathons, createHackathon, updateHackathon, deleteHackathon } from '@/lib/firebase-services';
+import { getAllUsers, getUserProfile, getAllHackathons, createHackathon, updateHackathon, deleteHackathon, deleteUser } from '@/lib/firebase-services';
 import { User, Hackathon } from '@/lib/types';
 import {
     Card,
@@ -148,6 +148,24 @@ export default function AdminPage() {
         }
     };
 
+    const handleDeleteUser = async (id: string) => {
+        if (id === authUser?.uid) {
+            toast({ title: 'Error', description: 'You cannot delete yourself.', variant: 'destructive' });
+            return;
+        }
+
+        if (confirm('Are you sure you want to delete this user? This action is permanent and only removes their profile data.')) {
+            try {
+                await deleteUser(id);
+                toast({ title: 'User Deleted', description: 'User profile removed successfully.' });
+                setUsers(users.filter(u => u.id !== id));
+            } catch (error) {
+                console.error('Error deleting user:', error);
+                toast({ title: 'Error', description: 'Failed to delete user.', variant: 'destructive' });
+            }
+        }
+    };
+
     if (authLoading || loading) {
         return (
             <div className="flex h-[50vh] items-center justify-center">
@@ -262,12 +280,25 @@ export default function AdminPage() {
                                             </TableCell>
                                             <TableCell>{user.location}</TableCell>
                                             <TableCell className="text-right">
-                                                <button
-                                                    onClick={() => router.push(`/profile/${user.id}`)}
-                                                    className="text-sm font-medium text-primary hover:underline"
-                                                >
-                                                    View Profile
-                                                </button>
+                                                <div className="flex justify-end gap-2">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={() => router.push(`/profile/${user.id}`)}
+                                                        className="text-primary hover:text-primary hover:bg-primary/10"
+                                                    >
+                                                        View Profile
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                                        onClick={() => handleDeleteUser(user.id)}
+                                                        disabled={user.id === authUser?.uid}
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </Button>
+                                                </div>
                                             </TableCell>
                                         </TableRow>
                                     ))}
