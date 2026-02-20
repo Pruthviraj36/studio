@@ -27,7 +27,14 @@ export function AIPortfolioAnalysis({ user }: AIPortfolioAnalysisProps) {
   const handleAnalysis = () => {
     startTransition(async () => {
       setError(null);
-      const { result, error } = await getAIPortfolioAnalysis(user);
+      // Sanitize user object to remove non-plain fields like Firestore Timestamps
+      const serializedUser = {
+        ...user,
+        createdAt: undefined,
+        updatedAt: undefined,
+      };
+
+      const { result, error } = await getAIPortfolioAnalysis(serializedUser);
       if (error) {
         setError(error);
       } else {
@@ -42,12 +49,12 @@ export function AIPortfolioAnalysis({ user }: AIPortfolioAnalysisProps) {
         <div className="space-y-4">
           <Skeleton className="h-8 w-3/4" />
           <Skeleton className="h-20 w-full" />
-           <Skeleton className="h-8 w-3/4" />
+          <Skeleton className="h-8 w-3/4" />
           <Skeleton className="h-20 w-full" />
         </div>
       );
     }
-    
+
     if (result) {
       return (
         <div className="space-y-6">
@@ -58,49 +65,49 @@ export function AIPortfolioAnalysis({ user }: AIPortfolioAnalysisProps) {
             </ul>
           </div>
           <div>
-            <h3 className="font-semibold font-headline flex items-center gap-2 mb-2"><Target className='text-blue-500'/> Recommended Roles</h3>
-             <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
+            <h3 className="font-semibold font-headline flex items-center gap-2 mb-2"><Target className='text-blue-500' /> Recommended Roles</h3>
+            <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
               {result.recommendedRoles.map((r, i) => <li key={i}>{r}</li>)}
             </ul>
           </div>
           <div>
-            <h3 className="font-semibold font-headline flex items-center gap-2 mb-2"><Lightbulb className='text-yellow-500'/> Project Suggestions & Skill Gaps</h3>
-             <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
+            <h3 className="font-semibold font-headline flex items-center gap-2 mb-2"><Lightbulb className='text-yellow-500' /> Project Suggestions & Skill Gaps</h3>
+            <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
               {result.skillGaps.map((g, i) => <li key={i}>{g}</li>)}
               {result.projectSuggestions.map((p, i) => <li key={i}>{p}</li>)}
             </ul>
           </div>
-           <div className="text-center pt-4">
-              <Button
-                onClick={() => setResult(null)}
-                variant="outline"
-                className='bg-white/50 dark:bg-black/50'
-              >
-                Run Analysis Again
-              </Button>
-            </div>
+          <div className="text-center pt-4">
+            <Button
+              onClick={() => setResult(null)}
+              variant="outline"
+              className='bg-white/50 dark:bg-black/50'
+            >
+              Run Analysis Again
+            </Button>
+          </div>
         </div>
       );
     }
-    
+
     return (
-         <div className="text-center">
-            <p className="text-muted-foreground mb-4">Get AI-powered insights on your developer profile.</p>
-            <Button onClick={handleAnalysis} disabled={isPending}>
-              {isPending ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Analyzing...
-                </>
-              ) : (
-                <>
-                  <Bot className="mr-2 h-4 w-4" />
-                  Generate AI Insights
-                </>
-              )}
-            </Button>
-             {error && <p className="text-destructive text-sm mt-4">{error}</p>}
-         </div>
+      <div className="text-center">
+        <p className="text-muted-foreground mb-4">Get AI-powered insights on your developer profile.</p>
+        <Button onClick={handleAnalysis} disabled={isPending}>
+          {isPending ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Analyzing...
+            </>
+          ) : (
+            <>
+              <Bot className="mr-2 h-4 w-4" />
+              Generate AI Insights
+            </>
+          )}
+        </Button>
+        {error && <p className="text-destructive text-sm mt-4">{error}</p>}
+      </div>
     );
   }
 

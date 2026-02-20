@@ -29,7 +29,14 @@ export function AITeamRecommendations({ user }: AITeamRecommendationsProps) {
   const handleAnalysis = () => {
     startTransition(async () => {
       setError(null);
-      const { result, error } = await getAITeamRecommendations(user);
+      // Sanitize user object to remove non-plain fields like Firestore Timestamps
+      const serializedUser = {
+        ...user,
+        createdAt: undefined,
+        updatedAt: undefined,
+      };
+
+      const { result, error } = await getAITeamRecommendations(serializedUser);
       if (error) {
         setError(error);
       } else {
@@ -42,11 +49,11 @@ export function AITeamRecommendations({ user }: AITeamRecommendationsProps) {
     <div className="w-full max-w-4xl mx-auto">
       {!result && (
         <div className="flex flex-col items-center justify-center text-center p-8 rounded-2xl border-2 border-dashed bg-white/20 dark:bg-black/20 backdrop-blur-sm">
-            <div className="p-4 bg-primary/10 rounded-full mb-4">
-                <Sparkles className="h-10 w-10 text-primary" />
-            </div>
-            <h3 className="text-xl font-semibold font-headline mb-2">Ready to find your squad?</h3>
-            <p className="text-muted-foreground mb-6">Click the button below to get started.</p>
+          <div className="p-4 bg-primary/10 rounded-full mb-4">
+            <Sparkles className="h-10 w-10 text-primary" />
+          </div>
+          <h3 className="text-xl font-semibold font-headline mb-2">Ready to find your squad?</h3>
+          <p className="text-muted-foreground mb-6">Click the button below to get started.</p>
           <Button
             onClick={handleAnalysis}
             disabled={isPending}
@@ -86,27 +93,27 @@ export function AITeamRecommendations({ user }: AITeamRecommendationsProps) {
                     <CardDescription className='pt-1'>Based on your profile and interests</CardDescription>
                   </div>
                   <div className='text-right'>
-                      <p className='text-2xl font-bold text-primary'>{rec.matchScore}%</p>
-                      <p className='text-xs text-muted-foreground'>Match Score</p>
+                    <p className='text-2xl font-bold text-primary'>{rec.matchScore}%</p>
+                    <p className='text-xs text-muted-foreground'>Match Score</p>
                   </div>
                 </div>
               </CardHeader>
               <CardContent>
                 <Progress value={rec.matchScore} className="mb-4 h-2" />
                 <p className="text-sm text-foreground">{rec.reasoning}</p>
-                 <Button className="mt-4">Request to Join</Button>
+                <Button className="mt-4">Request to Join</Button>
               </CardContent>
             </Card>
           ))}
-           <div className="text-center pt-4">
-              <Button
-                onClick={() => setResult(null)}
-                variant="outline"
-                className='bg-white/50 dark:bg-black/50'
-              >
-                Run Again
-              </Button>
-            </div>
+          <div className="text-center pt-4">
+            <Button
+              onClick={() => setResult(null)}
+              variant="outline"
+              className='bg-white/50 dark:bg-black/50'
+            >
+              Run Again
+            </Button>
+          </div>
         </div>
       )}
     </div>

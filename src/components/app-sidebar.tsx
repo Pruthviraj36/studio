@@ -9,6 +9,7 @@ import {
   User,
   Users,
   Code,
+  Shield,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -20,7 +21,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Button } from './ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import { currentUser } from '@/lib/data';
+import { useAuth } from './auth-provider';
 
 const menuItems = [
   { href: '/discover', label: 'Discover', icon: Compass },
@@ -32,6 +33,18 @@ const menuItems = [
 
 export function AppSidebar() {
   const pathname = usePathname();
+  const { profile } = useAuth();
+
+  const userDisplay = {
+    name: profile?.name || 'Builder',
+    avatar: profile?.avatar || 'default',
+    experience: profile?.experience || 'Developer',
+  };
+
+  const currentMenuItems = [...menuItems];
+  if (profile?.role === 'admin') {
+    currentMenuItems.push({ href: '/admin', label: 'Admin', icon: Shield });
+  }
 
   return (
     <Sidebar>
@@ -42,7 +55,7 @@ export function AppSidebar() {
         </Link>
       </SidebarHeader>
       <SidebarMenu className="flex-1 p-4">
-        {menuItems.map(({ href, label, icon: Icon }) => (
+        {currentMenuItems.map(({ href, label, icon: Icon }) => (
           <SidebarMenuItem key={href}>
             <SidebarMenuButton
               asChild
@@ -62,16 +75,16 @@ export function AppSidebar() {
         <Button asChild variant="outline" className="w-full justify-start gap-2 p-2 h-12">
           <Link href="/profile">
             <Avatar className="h-8 w-8">
-                <AvatarImage
-                  src={`https://picsum.photos/seed/${currentUser.avatar}/200/200`}
-                  alt={currentUser.name}
-                  data-ai-hint="professional person"
-                />
-              <AvatarFallback>{currentUser.name.charAt(0)}</AvatarFallback>
+              <AvatarImage
+                src={`https://picsum.photos/seed/${userDisplay.avatar}/200/200`}
+                alt={userDisplay.name}
+                data-ai-hint="professional person"
+              />
+              <AvatarFallback>{userDisplay.name.charAt(0)}</AvatarFallback>
             </Avatar>
             <div className="flex flex-col items-start">
-              <span className='font-medium'>{currentUser.name}</span>
-              <span className="text-xs text-muted-foreground">{currentUser.experience}</span>
+              <span className='font-medium'>{userDisplay.name}</span>
+              <span className="text-xs text-muted-foreground">{userDisplay.experience}</span>
             </div>
           </Link>
         </Button>

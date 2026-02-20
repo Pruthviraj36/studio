@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { UserCard } from '@/components/user-card';
 import { Input } from '@/components/ui/input';
 import {
@@ -10,32 +10,63 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Search } from 'lucide-react';
+import { Search, Loader2, Heart } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import type { User } from '@/lib/types';
+import { getAllUsers, getUserProfile } from '@/lib/firebase-services';
+import { useAuth } from './auth-provider';
 
-type DiscoverContentProps = {
-  initialUsers: User[];
-};
-
-export function DiscoverContent({ initialUsers }: DiscoverContentProps) {
+export function DiscoverContent() {
+  const { user: authUser } = useAuth();
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [skillFilter, setSkillFilter] = useState('all');
   const [experienceFilter, setExperienceFilter] = useState('all');
+  const [favoritesOnly, setFavoritesOnly] = useState(false);
+  const [currentUserProfile, setCurrentUserProfile] = useState<User | null>(null);
+
+  const fetchData = useCallback(async () => {
+    try {
+      const [allUsers, profile] = await Promise.all([
+        getAllUsers(),
+        authUser ? getUserProfile(authUser.uid) : Promise.resolve(null)
+      ]);
+      setUsers(allUsers.filter(u => u.id !== authUser?.uid));
+      setCurrentUserProfile(profile);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [authUser]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   // Get unique skills and experience levels
   const allSkills = useMemo(
-    () => [...new Set(initialUsers.flatMap((user) => user.skills))],
-    [initialUsers]
+    () => [...new Set(users.flatMap((user) => user.skills))],
+    [users]
   );
 
   const experienceLevels = useMemo(
-    () => [...new Set(initialUsers.map((user) => user.experience))],
-    [initialUsers]
+    () => [...new Set(users.map((user) => user.experience))],
+    [users]
   );
 
   // Filter users based on all criteria
   const filteredUsers = useMemo(() => {
-    return initialUsers.filter((user) => {
+    return users.filter((user) => {
+      // Favorites filter
+      if (favoritesOnly) {
+        if (!currentUserProfile?.favorites?.includes(user.id)) {
+          return false;
+        }
+      }
+
       // Search query filter
       if (searchQuery) {
         const lowercaseQuery = searchQuery.toLowerCase();
@@ -65,7 +96,7 @@ export function DiscoverContent({ initialUsers }: DiscoverContentProps) {
 
       return true;
     });
-  }, [initialUsers, searchQuery, skillFilter, experienceFilter]);
+  }, [users, searchQuery, skillFilter, experienceFilter]);
 
   const handleSearchChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -86,6 +117,7 @@ export function DiscoverContent({ initialUsers }: DiscoverContentProps) {
     setSearchQuery('');
     setSkillFilter('all');
     setExperienceFilter('all');
+    setFavoritesOnly(false);
   }, []);
 
   return (
@@ -131,15 +163,24 @@ export function DiscoverContent({ initialUsers }: DiscoverContentProps) {
               ))}
             </SelectContent>
           </Select>
+
+          <Button
+            variant={favoritesOnly ? "default" : "outline"}
+            className={cn("gap-2", favoritesOnly && "bg-red-500 hover:bg-red-600 text-white")}
+            onClick={() => setFavoritesOnly(!favoritesOnly)}
+          >
+            <Heart className={cn("h-4 w-4", favoritesOnly && "fill-current")} />
+            <span className="hidden sm:inline">Favorites</span>
+          </Button>
         </div>
       </div>
 
       {/* Results summary and reset button */}
       <div className="mb-6 flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
-          Showing {filteredUsers.length} of {initialUsers.length} developers
+          {loading ? 'Loading developers...' : `Showing ${filteredUsers.length} of ${users.length} developers`}
         </p>
-        {(searchQuery || skillFilter !== 'all' || experienceFilter !== 'all') && (
+        {(searchQuery || skillFilter !== 'all' || experienceFilter !== 'all') && !loading && (
           <button
             onClick={handleResetFilters}
             className="text-sm text-blue-600 hover:text-blue-700 underline"
@@ -149,11 +190,19 @@ export function DiscoverContent({ initialUsers }: DiscoverContentProps) {
         )}
       </div>
 
-      {/* User grid */}
-      {filteredUsers.length > 0 ? (
+      {loading ? (
+        <div className="flex h-[50vh] items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      ) : filteredUsers.length > 0 ? (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {filteredUsers.map((user: User) => (
-            <UserCard key={user.id} user={user} />
+            <UserCard
+              key={user.id}
+              user={user}
+              isFavorite={currentUserProfile?.favorites?.includes(user.id)}
+              onUpdate={fetchData}
+            />
           ))}
         </div>
       ) : (

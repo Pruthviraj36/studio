@@ -1,23 +1,61 @@
+'use client';
+
+import { useAuth } from '@/components/auth-provider';
+import { useRouter, usePathname } from 'next/navigation';
+import { useEffect } from 'react';
 import { AppSidebar } from '@/components/app-sidebar';
 import { Header } from '@/components/header';
-import { SidebarProvider } from '@/components/ui/sidebar';
+import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
+import { Loader2 } from 'lucide-react';
 
-export default function AppLayout({
+export default function AuthenticatedLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
+  const { user, profile, loading } = useAuth();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  useEffect(() => {
+    if (!loading) {
+      if (!user && !pathname.startsWith('/auth')) {
+        router.push('/auth/login');
+      } else if (user && pathname.startsWith('/admin') && profile && profile.role !== 'admin') {
+        router.push('/discover');
+      }
+    }
+  }, [user, profile, loading, router, pathname]);
+
+  if (loading) {
+    return (
+      <div className="flex h-screen w-screen items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!user && !pathname.startsWith('/auth')) {
+    return null;
+  }
+
+  // Redirection for admin handled in useEffect
+  if (user && pathname.startsWith('/admin') && profile && profile.role !== 'admin') {
+    return null;
+  }
+
+  // Auth pages don't need the sidebar/header
+  if (pathname.startsWith('/auth')) {
+    return <>{children}</>;
+  }
+
   return (
     <SidebarProvider>
-      <div className="flex h-screen w-full">
-        <AppSidebar />
-        <div className="flex flex-1 flex-col overflow-hidden">
-          <Header />
-          <main className="flex-1 overflow-y-auto p-4 md:p-8">
-            {children}
-          </main>
-        </div>
-      </div>
+      <AppSidebar />
+      <SidebarInset>
+        <Header />
+        <main className="p-4 md:p-8">{children}</main>
+      </SidebarInset>
     </SidebarProvider>
   );
 }

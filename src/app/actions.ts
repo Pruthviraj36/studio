@@ -1,7 +1,46 @@
 'use server';
 
-import type { User } from '@/lib/types';
-import { currentUser, teams } from '@/lib/data';
+import type { User, Team } from '@/lib/types';
+import { getAllTeams, toggleFavoriteDeveloper as toggleFavInDb, updateUserGithubStats } from '@/lib/firebase-services';
+import { fetchGitHubUser, fetchGitHubRepos, fetchGitHubActivity, parseLanguageStats, formatActivitySummary, getTopRepos } from '@/lib/github';
+
+export async function refreshGithubStats(userId: string, githubUrl: string) {
+  try {
+    const username = githubUrl.split('/').pop();
+    if (!username) throw new Error('Invalid GitHub URL');
+
+    const token = process.env.GITHUB_TOKEN;
+    const [user, repos, events] = await Promise.all([
+      fetchGitHubUser(username, token),
+      fetchGitHubRepos(username, token),
+      fetchGitHubActivity(username, token),
+    ]);
+
+    const stats = {
+      stars: repos.reduce((sum, repo) => sum + repo.stargazers_count, 0),
+      forks: repos.reduce((sum, repo) => sum + repo.forks_count, 0),
+      topRepos: getTopRepos(repos, 3),
+      languages: parseLanguageStats(repos),
+      recentActivity: formatActivitySummary(events, repos),
+    };
+
+    await updateUserGithubStats(userId, stats);
+    return { success: true, stats };
+  } catch (error: any) {
+    console.error('Error refreshing GitHub stats:', error);
+    return { error: error.message };
+  }
+}
+
+export async function toggleFavorite(currentUserId: string, targetUserId: string) {
+  try {
+    await toggleFavInDb(currentUserId, targetUserId);
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error toggling favorite:', error);
+    return { error: error.message };
+  }
+}
 
 export async function getGitHubUser(username: string): Promise<User | null> {
   try {
@@ -23,6 +62,7 @@ export async function getGitHubUser(username: string): Promise<User | null> {
 
 export async function getAIPortfolioAnalysis(user: User) {
   try {
+    console.log(`[AI] Generating portfolio analysis for user: ${user.id}`);
     const githubProfileSummary = `
       User: ${user.name}.
       Bio: ${user.bio}.
@@ -36,6 +76,7 @@ export async function getAIPortfolioAnalysis(user: User) {
       Recent Activity: ${user.githubStats.recentActivity}.
     `;
 
+    console.log(`[AI] Calling portfolio analysis API...`);
     const response = await fetch(
       `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9002'}/api/ai/portfolio-analysis`,
       {
@@ -46,19 +87,24 @@ export async function getAIPortfolioAnalysis(user: User) {
     );
 
     if (!response.ok) {
+      console.error(`[AI] API Error: ${response.status} ${response.statusText}`);
       throw new Error(`Failed to get portfolio analysis: ${response.statusText}`);
     }
 
     const result = await response.json();
+    console.log(`[AI] Portfolio analysis completed successfully.`);
     return { result };
   } catch (e: any) {
-    console.error(e);
+    console.error(`[AI] Critical Error in getAIPortfolioAnalysis:`, e);
     return { error: e.message || 'Failed to generate AI portfolio analysis.' };
   }
 }
 
 export async function getAITeamRecommendations(user: User) {
   try {
+    console.log(`[AI] Generating team recommendations for user: ${user.id}`);
+    const teams = await getAllTeams();
+
     const developerProfile = `
         Name: ${user.name}
         Bio: ${user.bio}
@@ -70,15 +116,16 @@ export async function getAITeamRecommendations(user: User) {
       developerProfile,
       skills: user.skills,
       interests: user.interests,
-      teams: teams.map((team) => ({
+      teams: teams.map((team: Team) => ({
         id: team.id,
         name: team.name,
         description: team.projectDescription,
         requiredSkills: team.requiredSkills,
-        currentMembers: team.members.map((m) => m.name),
+        currentMembers: team.members.map((m: any) => m.name),
       })),
     };
 
+    console.log(`[AI] Calling team recommendations API with ${teams.length} teams...`);
     const response = await fetch(
       `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9002'}/api/ai/team-recommendations`,
       {
@@ -89,13 +136,15 @@ export async function getAITeamRecommendations(user: User) {
     );
 
     if (!response.ok) {
+      console.error(`[AI] API Error: ${response.status} ${response.statusText}`);
       throw new Error(`Failed to get team recommendations: ${response.statusText}`);
     }
 
     const result = await response.json();
+    console.log(`[AI] Team recommendations completed successfully.`);
     return { result };
   } catch (e: any) {
-    console.error(e);
+    console.error(`[AI] Critical Error in getAITeamRecommendations:`, e);
     return { error: e.message || 'Failed to generate AI team recommendations.' };
   }
 }

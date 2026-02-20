@@ -1,5 +1,6 @@
 export type User = {
   id: string;
+  email: string;
   name: string;
   avatar: string;
   bio: string;
@@ -8,7 +9,11 @@ export type User = {
   skills: string[];
   interests: string[];
   githubUrl: string;
+  websiteUrl: string; // Added websiteUrl
   githubStats: GithubStats;
+  role: 'admin' | 'user';
+  favorites: string[]; // List of developer IDs
+  createdAt?: any;
 };
 
 export type Team = {
@@ -18,6 +23,38 @@ export type Team = {
   projectDescription: string;
   requiredSkills: string[];
   members: Pick<User, 'id' | 'name' | 'avatar'>[];
+  pendingRequests?: Pick<User, 'id' | 'name' | 'avatar' | 'skills'>[];
+  tasks?: TeamTask[];
+  meetings?: TeamMeeting[];
+  createdBy: string;
+};
+
+export type TeamTask = {
+  id: string;
+  title: string;
+  description: string;
+  status: 'Todo' | 'In Progress' | 'Done';
+  assigneeId?: string;
+  dueDate?: any;
+};
+
+export type TeamMeeting = {
+  id: string;
+  title: string;
+  description: string;
+  date: any;
+  link?: string;
+};
+
+export type Notification = {
+  id: string;
+  userId: string;
+  title: string;
+  message: string;
+  type: 'JoinRequest' | 'TeamUpdate' | 'ChatMessage' | 'System';
+  link?: string;
+  read: boolean;
+  createdAt: any;
 };
 
 export type GithubStats = {

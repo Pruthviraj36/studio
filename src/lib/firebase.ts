@@ -32,8 +32,12 @@ const app = initializeApp(firebaseConfig);
 export const auth: Auth = getAuth(app);
 export const db: Firestore = getFirestore(app);
 
-// Connect to emulators in development
-if (process.env.NODE_ENV === 'development') {
+// Connect to emulators in development if explicitly requested
+console.log('Firebase Init - NODE_ENV:', process.env.NODE_ENV);
+console.log('Firebase Init - USE_EMULATORS:', process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATORS);
+
+if (process.env.NODE_ENV === 'development' && process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATORS === 'true') {
+  console.log('Connecting to Firebase Emulators...');
   try {
     connectAuthEmulator(auth, 'http://localhost:9099');
   } catch (error) {
@@ -45,6 +49,8 @@ if (process.env.NODE_ENV === 'development') {
   } catch (error) {
     // Emulator already connected
   }
+} else {
+  console.log('Using production Firebase services');
 }
 
 export default app;
